@@ -7,7 +7,7 @@ from bokeh.plotting import figure
 from bokeh.resources import INLINE
 from bokeh.util.string import encode_utf8
 import requests
-import pandas
+import pandas as pd
 import datetime
 
 app = flask.Flask(__name__)
@@ -18,6 +18,27 @@ def getitem(obj, item, default):
 		return default
 	else:
 		return obj[item]
+
+data=pd.read_csv('static/data/small_sample.csv')
+
+
+@app.route("/")
+def histogram():
+	js_resources = INLINE.render_js()
+	css_resources = INLINE.render_css()
+	
+	plot = figure(width=300, height=300)
+	plot.vbar(x=[1, 2, 3], width=0.5, bottom=0, top=[1,2,3], color="#CAB2D6")
+	script, div = components(p)
+		html = flask.render_template(
+			'index.html',
+			plot_script=script,
+			plot_div=div,
+			js_resources=js_resources,
+			css_resources=css_resources,
+			ticker=stock
+		)
+	return encode_utf8(html)
 
 
 @app.route("/")
@@ -78,9 +99,9 @@ def plotstock():
 			ticker=stock
 		)
 	else:
-		df = pandas.DataFrame(raw_json['dataset']['data'], columns=raw_json['dataset']['column_names'])
+		df = pd.DataFrame(raw_json['dataset']['data'], columns=raw_json['dataset']['column_names'])
 		df = df.set_index(['Date'])
-		df.index = pandas.to_datetime(df.index)
+		df.index = pd.to_datetime(df.index)
 		name = raw_json['dataset']['name']
 
 		# Create Stock Chart
