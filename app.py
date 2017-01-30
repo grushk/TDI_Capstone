@@ -6,6 +6,10 @@ from bokeh.embed import components
 from bokeh.plotting import figure
 from bokeh.resources import INLINE
 from bokeh.util.string import encode_utf8
+from bokeh.charts import HeatMap, bins
+from bokeh.layouts import column, gridplot
+from bokeh.palettes import RdYlGn6, RdYlGn9
+from bokeh.sampledata.autompg import autompg
 import requests
 import pandas as pd
 import datetime
@@ -21,25 +25,16 @@ def getitem(obj, item, default):
 
 data=pd.read_csv('static/data/small_sample.csv')
 
-#    {{ js_resources|indent(4)|safe }}
-#    {{ css_resources|indent(4)|safe }}
-#@app.route("/")
 def histogram():
-	js_resources = INLINE.render_js()
-	css_resources = INLINE.render_css()
-
 	plot = figure(width=300, height=300)
 	plot.vbar(x=[1, 2, 3], width=0.5, bottom=0, top=[1,2,3], color="#CAB2D6")
 	script, div = components(plot)
-	#html = flask.render_template(
-	#	'index.html',
-	#	plot_script=script,
-	#	plot_div=div
-	#	#js_resources=js_resources,
-	#	#css_resources=css_resources
-	#)
-	return script, div #encode_utf8(html)
+	return script, div
 
+def heatmap():
+	plot = HeatMap(autompg, x=bins('mpg'), y=bins('displ'), stat='mean', values='cyl', palette=RdYlGn6)
+	script, div = components(plot)
+	return script, div
 
 @app.route('/')
 def main():
@@ -48,11 +43,22 @@ def main():
 
 @app.route('/index')
 def index():
-	script, div = histogram()
-	#print(script, div)
-	print(div)
-	return flask.render_template('index.html',plot_script=script, plot_div=div)
+	#script, div = histogram()
+	return flask.render_template('index.html'
+	)
 
+@app.route('/analysis')
+def about():
+	script1, div1 = histogram()
+	script2, div2 = heatmap()
+	return flask.render_template('analysis.html',
+		plot_script1=script1,
+		plot_div1=div1,
+		plot_script2=script2,
+		plot_div2=div2,
+		js_resources = INLINE.render_js(),
+		css_resources = INLINE.render_css()
+	)
 
 if __name__ == "__main__":
 	print(__doc__)
