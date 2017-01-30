@@ -26,13 +26,21 @@ def getitem(obj, item, default):
 data=pd.read_csv('static/data/small_sample.csv')
 
 def histogram():
-	plot = figure(width=300, height=300)
-	plot.vbar(x=[1, 2, 3], width=0.5, bottom=0, top=[1,2,3], color="#CAB2D6")
+	d = data.groupby(['pickup_hour'])['tpep_pickup_datetime'].count()
+	plot = figure(width=400, height=400, title="Taxi Rides per Hour in Sample - Not an Overlap with Rush Hour")
+	plot.vbar(x=list(d.index), width=0.5, bottom=0, top=list(d), color="#CAB2D6")
 	script, div = components(plot)
 	return script, div
 
 def heatmap():
-	plot = HeatMap(autompg, x=bins('mpg'), y=bins('displ'), stat='mean', values='cyl', palette=RdYlGn6)
+	plot = figure(width=400, height=400, title="Travel Speed by Wind Speed")
+	plot.scatter(data['HOURLYWindSpeed'], data['Travel.Speed.MPH'])
+	script, div = components(plot)
+	return script, div
+
+def scatter():
+	plot = figure(width=400, height=400, title="Travel Speed by Temperature")
+	plot.scatter(data['HOURLYWETBULBTEMPF'], data['Travel.Speed.MPH'])
 	script, div = components(plot)
 	return script, div
 
@@ -51,11 +59,14 @@ def index():
 def about():
 	script1, div1 = histogram()
 	script2, div2 = heatmap()
+	script3, div3 = scatter()
 	return flask.render_template('analysis.html',
 		plot_script1=script1,
 		plot_div1=div1,
 		plot_script2=script2,
 		plot_div2=div2,
+		plot_script3=script3,
+		plot_div3=div3,
 		js_resources = INLINE.render_js(),
 		css_resources = INLINE.render_css()
 	)
