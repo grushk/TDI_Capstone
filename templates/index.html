@@ -12,6 +12,15 @@
     <link href="../static/css/bootstrap-theme.min.css" rel="stylesheet">
     <link href="../static/css/custom.css" rel="stylesheet">
     <link href="../static/js/bootstrap.min.js" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        Date.prototype.toDateInputValue = (function() {
+            var local = new Date(this);
+            local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+            return local.toJSON().slice(0,10);
+        });
+        document.getElementById('timepicker').value = new Date().toDateInputValue();
+    </script>
 </head>
 <body>
     <nav class="navbar navbar-default navbar-fixed-top">
@@ -33,12 +42,12 @@
                 <div class="input-group">
                 <label for="stockticker">Travel Time Prediction</label><br>
                     <input type="text" id="startloc" placeholder="Starting point" class="form-control"><br>
-                    <input type="text" id="endloc" placeholder="Ending point"><br>
+                    <input type="text" id="endloc" placeholder="Ending point" class="form-control"><br>
                 </div>
                 <div class="input-group">
                     <label>Departure Time</label><br>
-                    <input type="text" id="datepicker"><br>
-                    <input type="text" id="timepicker"><br>
+                    <input type="date" class="form-control" id="datepicker" placeholder="datepicker"><br><br>
+                    <input type="text" class="form-control" id="timepicker"><br>
                 </div>
                 <!--button class="btn btn-primary" type="submit">Submit</button-->
             </form>
@@ -87,6 +96,6 @@
     src="https://maps.googleapis.com/maps/api/js?key=$GMAP_API&callback=initMap">
     </script>
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <!--script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"script-->
 </body>
 </html>
