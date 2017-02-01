@@ -9,13 +9,12 @@ from bokeh.util.string import encode_utf8
 from bokeh.charts import HeatMap, bins
 from bokeh.layouts import column, gridplot
 from bokeh.palettes import RdYlGn6, RdYlGn9
-from bokeh.sampledata.autompg import autompg
 import requests
 import pandas as pd
 import datetime
 
 app = flask.Flask(__name__)
-
+gmaps_key = "AIzaSyCz-oZKRWxA_e0DHaZujnsy937yMzYoYXM"
 
 def getitem(obj, item, default):
 	if item not in obj:
@@ -52,7 +51,8 @@ def main():
 @app.route('/index')
 def index():
 	#script, div = histogram()
-	return flask.render_template('index.html'
+	return flask.render_template('index.html',
+		gmaps_key = gmaps_key
 	)
 
 @app.route('/analysis')
