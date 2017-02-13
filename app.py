@@ -9,12 +9,19 @@ from bokeh.util.string import encode_utf8
 from bokeh.charts import HeatMap, bins
 from bokeh.layouts import column, gridplot
 from bokeh.palettes import RdYlGn6, RdYlGn9
+from datetime import datetime
 import requests
 import pandas as pd
+import numpy as np
 import datetime
+import json
+import googlemaps
+#from flask_googlemaps import Map
 
 app = flask.Flask(__name__)
 gmaps_key = "AIzaSyCz-oZKRWxA_e0DHaZujnsy937yMzYoYXM"
+wu_key = '784ea582c4d13bc7'
+gmaps = googlemaps.Client(key=gmaps_key)
 
 def getitem(obj, item, default):
 	if item not in obj:
@@ -50,9 +57,15 @@ def main():
 
 @app.route('/index')
 def index():
-	#script, div = histogram()
+	#mymap = Map(
+    #    identifier="view-side",
+    #    lat=37.4419,
+    #    lng=-122.1419,
+    #    markers=[(37.4419, -122.1419)]
+    #)
 	return flask.render_template('index.html',
 		gmaps_key = gmaps_key
+		#mymap=mymap
 	)
 
 @app.route('/analysis')
@@ -70,6 +83,32 @@ def about():
 		js_resources = INLINE.render_js(),
 		css_resources = INLINE.render_css()
 	)
+
+@app.route('/ajax', methods = ['POST'])
+def ajax_request():
+    date = flask.request.form['datepicker']
+    time = flask.request.form['timepicker']
+    origin = flask.request.form['origin'].replace(' ','+')
+    destination = flask.request.form['destination'].replace(' ','+')
+    if origin == "" or destination == "":
+    	origin = "Central+Park"
+    	destination = "JFK+Airport"
+    uri  = 'https://maps.googleapis.com/maps/api/directions/json?origin='+origin+'&destination='+destination+'&mode=driving&key='+gmaps_key
+    response = requests.get(uri)
+    dirs = json.loads(response.text)
+
+
+    uri = 'http://api.wunderground.com/api/' + wu_key + '/hourly10day/q/NY/New_York_City.json'
+    response = requests.get(uri)
+    data = json.loads(response.text)
+    fc = data['hourly_forecast']
+    hour = str(int(time[:2]) + (1 if int(time[-2:]) >= 30 else 0) + 4)
+    lst = [x for x in fc if x['FCTTIME']['year'] == date[:4] and x['FCTTIME']['mon_padded'] == date[5:7] and x['FCTTIME']['mday_padded'] == date[8:] and x['FCTTIME']['hour'] == hour]
+    if len(lst)>0:
+    	forecast = lst[0]
+    	return flask.jsonify(icon_url=forecast['icon_url'], temp=forecast['temp']['english'], dir=dirs)
+    else:
+    	return flask.jsonify(icon_url="", temp="Error: Weather forecast not found. Please confirm date is in the next ten days.", dir=dirs)
 
 if __name__ == "__main__":
 	print(__doc__)

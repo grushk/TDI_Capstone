@@ -25,6 +25,109 @@
         }
         window.onload = initializeTimes;
     </script>
+    <script  type="text/javascript">
+        var placeSearch,autocomplete;
+        window.directionsDisplay;
+        window.directionsService = new google.maps.DirectionsService(); 
+        window.map;
+        function initMap() {
+            var directionsDisplay = new google.maps.DirectionsRenderer();  
+            var mapOptions = {
+                zoom: 10,
+                draggable: true,
+                center: {lat: 40.713639, lng: -73.997265}
+                //center: {lat: 37.874637, lng: -122.263965} 
+            }
+            var map = new google.maps.Map(document.getElementById('map'), mapOptions);
+            directionsDisplay.setMap(map);
+
+            // Set up autocomplete for the location input fields
+            autocomplete = new google.maps.places.Autocomplete(document.getElementById('startloc'), { types: [ 'geocode' ] });
+            google.maps.event.addListener(autocomplete, 'place_changed', function() {
+                fillInAddress();
+            });
+            autocomplete2 = new google.maps.places.Autocomplete(document.getElementById('endloc'), { types: [ 'geocode' ] });
+            google.maps.event.addListener(autocomplete2, 'place_changed', function() {
+                fillInAddress();
+            });
+        }
+        // Autocomplete Code
+        function fillInAddress() {
+            var place = autocomplete.getPlace();
+
+            for (var component in component_form) {
+                document.getElementById(component).value = "";
+                document.getElementById(component).disabled = false;
+            }
+
+            for (var j = 0; j < place.address_components.length; j++) {
+                var att = place.address_components[j].types[0];
+                if (component_form[att]) {
+                    var val = place.address_components[j][component_form[att]];
+                    document.getElementById(att).value = val;
+                }
+            }
+        }
+        // Submit button code
+        function loadXMLDoc() {
+            var req = new XMLHttpRequest()
+            req.onreadystatechange = function() {
+                if (req.readyState == 4 && req.status == 200) {
+                    var response = JSON.parse(req.responseText)
+                    document.getElementById('myDiv').textContent = "Temperature: " + response.temp + String.fromCharCode(176) + " F";
+                    document.getElementById('weatherIcon').src = response.icon_url;
+                    //Set directions on Google Map
+                    document.getElementById('travelTime').textContent = "Travel Time: " + response.dir.routes[0].legs[0].duration.text;
+                    if (!document.getElementById('startloc').value || !document.getElementById('endloc').value) {
+                        $('#warningMessage').show();
+                        document.getElementById('warningMessage').textContent = 'Using example directions from Central Park to JFK Airport because incomplete information entered';
+                    } else {
+                        $('#warningMessage').hide();
+                    }
+                    var directionsDisplay = new google.maps.DirectionsRenderer();
+                    var directionsService = new google.maps.DirectionsService(); 
+                    directionsDisplay.setMap(new google.maps.Map(document.getElementById('map'), {
+                        zoom: 10,
+                        center: {lat: 40.713639, lng: -73.997265} 
+                    })
+                    );
+                    //directionsDisplay.setDirections(response.dir.routes);
+                    var orig, dest;
+                    if(document.getElementById('startloc').value && document.getElementById('endloc').value) {
+                        orig = document.getElementById('startloc').value;
+                        dest = document.getElementById('endloc').value;
+                    } else {
+                        orig = "Central Park";
+                        dest = "JFK Airport";
+                    }
+                    directionsService.route({
+                        origin: orig,
+                        destination: dest,
+                        travelMode: google.maps.TravelMode['DRIVING']
+                    }, function(response, status) {
+                          if (status == 'OK') {
+                            directionsDisplay.setDirections(response);
+                          } else {
+                            window.alert('Directions request failed due to ' + status);
+                          }
+                    });
+                }
+            }
+
+            req.open('POST', '/ajax');
+            req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            var dp = document.getElementById('datepicker').value;
+            var tp = document.getElementById('timepicker').value;
+            var sl = document.getElementById('startloc').value;
+            var el = document.getElementById('endloc').value
+            var postVars = 'datepicker='+dp+'&timepicker='+tp+'&origin='+sl+'&destination='+el
+            req.send(postVars)
+            
+            return false
+        }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ gmaps_key }}&libraries=places&callback=initMap"
+         async defer></script>
 </head>
 <body>
     <nav class="navbar navbar-fixed-top navbar-inverse">
@@ -66,97 +169,22 @@
             <div class="input-group">
                 <span class="input-group-addon" id="basic-addon4"><span class="glyphicon glyphicon-time"></span></span>
                 <input type="time" class="form-control" id="timepicker" aria-describedby="basic-addon4">
-            </div>
+            </div><br>
+            <input class="btn btn-primary btn-block" type="submit" value="Submit" onclick="return loadXMLDoc()">
         </div>
         
         <div class="col-xs-7 col-xs-offset-5 col-md-8 col-md-offset-4 main">
             <div class="jumbotron">
-                Predicted Travel Time:
-                <span id="travelTime"></span>
-                <span id="warningMessage" class="alert alert-danger" role="alert" style="display: none;"></span>
-                    <!--a class="navbar-brand" href="https://www.linkedin.com/pub/grush-khalsa/22/ba1/154">
-                        <img src="https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x33.png" width="160" height="33" border="0" alt="View Grush Khalsa's profile on LinkedIn">
-                    </a-->
+                <div id="warningMessage" class="alert alert-danger" role="alert" style="display: none;"></div>
+                <div class="col-xs-6">
+                    <span id="travelTime"></span>
+                </div>
+                <div class="col-xs-6">
+                    <img src="" id="weatherIcon"><span id="myDiv"></span>
+                </div>
             </div>
-            <div id="map" class="col-md-12" style="height:500px"></div>
+            <div id="map" class="col-md-12" style="height:500px;"></div>
         </div>
     </div>
-
-
-    <script>
-        function initMap() {
-            var directionsService = new google.maps.DirectionsService;
-            var directionsDisplay = new google.maps.DirectionsRenderer;
-            var map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 10,
-                center: {lat: 40.713639, lng: -73.997265}
-            });
-            directionsDisplay.setMap(map);
-
-            var onChangeHandler = function() {
-                calculateAndDisplayRoute(directionsService, directionsDisplay);
-            };
-            document.getElementById('startloc').addEventListener('blur', onChangeHandler);
-            document.getElementById('endloc').addEventListener('blur', onChangeHandler);
-        }
-
-        function calculateAndDisplayRoute(directionsService, directionsDisplay) {
-            directionsService.route({
-                origin: document.getElementById('startloc').value,
-                destination: document.getElementById('endloc').value,
-                travelMode: 'DRIVING'
-            }, function(response, status) {
-                if (status === 'OK') {
-                    $('#warningMessage').hide();
-                    directionsDisplay.setDirections(response);
-                    //var obj = JSON.parse(response);
-                    document.getElementById('travelTime').textContent = response.routes[0].legs[0].duration.text;
-                } else {
-                    $('#warningMessage').show();
-                    document.getElementById('warningMessage').textContent = 'Directions request failed due to ' + status;
-                }
-            });
-        }
-    </script>
-    <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key={{ gmaps_key }}&callback=initMap">
-    </script>
-    <script type="text/javascript">
-        var placeSearch,autocomplete;
-
-        function initAutocomplete() {
-            autocomplete = new google.maps.places.Autocomplete(document.getElementById('startloc'), { types: [ 'geocode' ] });
-            google.maps.event.addListener(autocomplete, 'place_changed', function() {
-                fillInAddress();
-                //calculateAndDisplayRoute(directionsService, directionsDisplay);
-            });
-            autocomplete2 = new google.maps.places.Autocomplete(document.getElementById('endloc'), { types: [ 'geocode' ] });
-            google.maps.event.addListener(autocomplete2, 'place_changed', function() {
-                fillInAddress();
-                //calculateAndDisplayRoute(directionsService, directionsDisplay);
-            });
-            initMap();
-        }
-        function fillInAddress() {
-            var place = autocomplete.getPlace();
-
-            for (var component in component_form) {
-                document.getElementById(component).value = "";
-                document.getElementById(component).disabled = false;
-            }
-
-            for (var j = 0; j < place.address_components.length; j++) {
-                var att = place.address_components[j].types[0];
-                if (component_form[att]) {
-                    var val = place.address_components[j][component_form[att]];
-                    document.getElementById(att).value = val;
-                }
-            }
-        }
-    </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ gmaps_key }}&libraries=places&callback=initAutocomplete"
-         async defer></script>
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <!--script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"script-->
 </body>
 </html>
