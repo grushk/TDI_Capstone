@@ -15,13 +15,13 @@ import pandas as pd
 import numpy as np
 import datetime
 import json
-import googlemaps
+#import googlemaps
 #from flask_googlemaps import Map
 
 app = flask.Flask(__name__)
 gmaps_key = "AIzaSyCz-oZKRWxA_e0DHaZujnsy937yMzYoYXM"
 wu_key = '784ea582c4d13bc7'
-gmaps = googlemaps.Client(key=gmaps_key)
+#gmaps = googlemaps.Client(key=gmaps_key)
 
 def getitem(obj, item, default):
 	if item not in obj:
